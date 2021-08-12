@@ -27,6 +27,7 @@ extern struct PokemonStorage *gPokemonStoragePtr;
 
 void DrawTextWindowAndBufferTiles(const u8 *string, void *dst, u8 arg2, u8 arg3, s32 bytesToBuffer);
 u8 CountMonsInBox(u8 boxId);
+u8 CountPartyNonEggMons (void);
 s16 GetFirstFreeBoxSpot(u8 boxId);
 u8 CountPartyAliveNonEggMonsExcept(u8 slotToIgnore);
 u16 CountPartyAliveNonEggMons_IgnoreVar0x8004Slot(void);
