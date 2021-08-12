@@ -383,7 +383,6 @@ static void ShiftMoveSlot(struct Pokemon*, u8, u8);
 static void BlitBitmapToPartyWindow_LeftColumn(u8, u8, u8, u8, u8, u8);
 static void BlitBitmapToPartyWindow_RightColumn(u8, u8, u8, u8, u8, u8);
 static void CursorCb_Summary(u8);
-static void CursorCb_Nickname(u8);
 static void CursorCb_Switch(u8);
 static void CursorCb_Cancel1(u8);
 static void CursorCb_Item(u8);
@@ -2537,7 +2536,6 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
 
     sPartyMenuInternal->numActions = 0;
     AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_SUMMARY);
-    AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_NICKNAME); // Add an option to nickname a PKMN directly from the party menu.
 
     // Add field moves to action list
     for (i = 0; i < MAX_MON_MOVES; i++)
@@ -2720,27 +2718,6 @@ static void CB2_ReturnToPartyMenuFromSummaryScreen(void)
     gPaletteFade.bufferTransferDisabled = TRUE;
     gPartyMenu.slotId = gLastViewedMonIndex;
     InitPartyMenu(gPartyMenu.menuType, KEEP_PARTY_LAYOUT, gPartyMenu.action, TRUE, PARTY_MSG_DO_WHAT_WITH_MON, Task_TryCreateSelectionWindow, gPartyMenu.exitCallback);
-}
-
-static void CursorCb_Nickname (u8 taskId) {
-    static void ChangePokemonNickname (void);
-
-    sPartyMenuInternal->exitCallback = ChangePokemonNickname;
-    Task_ClosePartyMenu (taskId);
-    PlaySE (SE_SELECT);
-}
-
-static void ChangePokemonNickname (void) {
-    static void ChangePokemonNickname_CB (void);
-
-    GetMonData (&gPlayerParty[gPartyMenu.slotId], MON_DATA_NICKNAME, gStringVar3);
-    GetMonData (&gPlayerParty[gPartyMenu.slotId], MON_DATA_NICKNAME, gStringVar2);
-    DoNamingScreen (NAMING_SCREEN_NICKNAME, gStringVar2, GetMonData (&gPlayerParty [gPartyMenu.slotId], MON_DATA_SPECIES, NULL), GetMonGender (&gPlayerParty [gPartyMenu.slotId]), GetMonData (&gPlayerParty [gPartyMenu.slotId], MON_DATA_PERSONALITY, NULL), ChangePokemonNickname_CB);
-}
-
-static void ChangePokemonNickname_CB (void) {
-    SetMonData (&gPlayerParty[gPartyMenu.slotId], MON_DATA_NICKNAME, gStringVar2);
-    CB2_PartyMenuFromStartMenu ();
 }
 
 static void CursorCb_Switch(u8 taskId)
