@@ -364,6 +364,7 @@ const u8 gText_Shift[] = _("SHIFT");
 const u8 gText_SendOut[] = _("SEND OUT");
 const u8 gText_Switch2[] = _("SWITCH");
 const u8 gText_Summary5[] = _("SUMMARY");
+const u8 gText_Nickname[] = _("NICKNAME");
 const u8 gText_Moves[] = _("MOVES"); // Unused
 const u8 gText_Enter[] = _("ENTER");
 const u8 gText_NoEntry[] = _("NO ENTRY");
@@ -1817,3 +1818,7 @@ const u8 gText_Answer[] = _("ANSWER");
 const u8 gText_PokeBalls[] = _("POKé BALLS");
 const u8 gText_Berry[] = _("BERRY");
 const u8 gText_Berries[] = _("BERRIES");
+
+// Both strings below are used by the SWAP command in party_menu. 
+const u8 gText_XsYAnd[] = _("{STR_VAR_1}'s {STR_VAR_2} and\n"); 
+const u8 gText_XsYWereSwapped[] = _("{STR_VAR_1}'s {STR_VAR_2} swapped!{PAUSE_UNTIL_PRESS}");
