@@ -1817,7 +1817,3 @@ const u8 gText_Answer[] = _("ANSWER");
 const u8 gText_PokeBalls[] = _("POKé BALLS");
 const u8 gText_Berry[] = _("BERRY");
 const u8 gText_Berries[] = _("BERRIES");
-
-// Both strings below are used by the SWAP command in party_menu. 
-const u8 gText_XsYAnd[] = _("{STR_VAR_1}'s {STR_VAR_2} and\n"); 
-const u8 gText_XsYWereSwapped[] = _("{STR_VAR_1}'s {STR_VAR_2} swapped!{PAUSE_UNTIL_PRESS}");
