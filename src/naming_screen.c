@@ -1712,7 +1712,7 @@ static void DrawNormalTextEntryBox(void)
 static void DrawMonTextEntryBox(void)
 {
     u8 buffer[32];
-    if (sNamingScreen->templateNum == NAMING_SCREEN_NICKNAME) PlayCry1(SPECIES_RAYQUAZA, 0);
+    if (sNamingScreen->templateNum == NAMING_SCREEN_NICKNAME) PlayCry1 (sNamingScreen->monSpecies, 0);
     StringCopy(buffer, gSpeciesNames[sNamingScreen->monSpecies]);
     StringAppendN(buffer, sNamingScreen->template->title, 15);
     FillWindowPixelBuffer(sNamingScreen->windows[WIN_TEXT_ENTRY_BOX], PIXEL_FILL(1));
