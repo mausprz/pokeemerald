@@ -22,6 +22,7 @@
 #include "pokeball.h"
 #include "pokedex.h"
 #include "pokemon.h"
+#include "pokemon_icon.h"
 #include "random.h"
 #include "rtc.h"
 #include "save.h"
@@ -173,6 +174,8 @@
 static EWRAM_DATA u8 gUnknown_02022D04 = 0;
 static EWRAM_DATA u16 sCurrItemAndOptionMenuCheck = 0;
 
+static EWRAM_DATA u8 partyId[6] = {};
+
 static u8 sBirchSpeechMainTaskId;
 
 // Static ROM declarations
@@ -186,6 +189,7 @@ static void ClearMainMenuWindowTilemap(const struct WindowTemplate*);
 static void Task_DisplayMainMenu(u8);
 static void Task_WaitForBatteryDryErrorWindow(u8);
 static void MainMenu_FormatSavegameText(void);
+static void MainMenu_FormatSavegameParty(void);
 static void HighlightSelectedMainMenuItem(u8, u8, s16);
 static void Task_HandleMainMenuInput(u8);
 static void Task_HandleMainMenuAPressed(u8);
@@ -246,6 +250,7 @@ static void MainMenu_FormatSavegamePokedex(void);
 static void MainMenu_FormatSavegameTime(void);
 static void MainMenu_FormatSavegameBadges(void);
 static void NewGameBirchSpeech_CreateDialogueWindowBorder(u8, u8, u8, u8, u8, u8);
+static void UpdateIconsCallback(u8, u8);
 
 // .rodata
 
@@ -260,17 +265,17 @@ static const u16 sBirchSpeechBgGradientPal[] = INCBIN_U16("graphics/birch_speech
 static const u16 sBirchSpeechPlatformBlackPal[] = {RGB_BLACK, RGB_BLACK, RGB_BLACK, RGB_BLACK, RGB_BLACK, RGB_BLACK, RGB_BLACK, RGB_BLACK};
 
 #define MENU_LEFT 2
-#define MENU_TOP_WIN0 1
-#define MENU_TOP_WIN1 5
-#define MENU_TOP_WIN2 1
-#define MENU_TOP_WIN3 9
-#define MENU_TOP_WIN4 13
-#define MENU_TOP_WIN5 17
-#define MENU_TOP_WIN6 21
+#define MENU_TOP_WIN0 2
+#define MENU_TOP_WIN1 6
+#define MENU_TOP_WIN2 2
+#define MENU_TOP_WIN3 12
+#define MENU_TOP_WIN4 16
+#define MENU_TOP_WIN5 20
+#define MENU_TOP_WIN6 24
 #define MENU_WIDTH 26
 #define MENU_HEIGHT_WIN0 2
 #define MENU_HEIGHT_WIN1 2
-#define MENU_HEIGHT_WIN2 6
+#define MENU_HEIGHT_WIN2 8
 #define MENU_HEIGHT_WIN3 2
 #define MENU_HEIGHT_WIN4 2
 #define MENU_HEIGHT_WIN5 2
@@ -329,7 +334,7 @@ static const struct WindowTemplate sWindowTemplates_MainMenu[] =
         .width = MENU_WIDTH,
         .height = MENU_HEIGHT_WIN3,
         .paletteNum = 15,
-        .baseBlock = 0x9D
+        .baseBlock = 0xD1
     },
     // OPTION / MYSTERY GIFT
     {
@@ -339,7 +344,7 @@ static const struct WindowTemplate sWindowTemplates_MainMenu[] =
         .width = MENU_WIDTH,
         .height = MENU_HEIGHT_WIN4,
         .paletteNum = 15,
-        .baseBlock = 0xD1
+        .baseBlock = 0x105
     },
     // OPTION / MYSTERY EVENTS
     {
@@ -349,7 +354,7 @@ static const struct WindowTemplate sWindowTemplates_MainMenu[] =
         .width = MENU_WIDTH,
         .height = MENU_HEIGHT_WIN5,
         .paletteNum = 15,
-        .baseBlock = 0x105
+        .baseBlock = 0x139
     },
     // OPTION
     {
@@ -359,7 +364,7 @@ static const struct WindowTemplate sWindowTemplates_MainMenu[] =
         .width = MENU_WIDTH,
         .height = MENU_HEIGHT_WIN6,
         .paletteNum = 15,
-        .baseBlock = 0x139
+        .baseBlock = 0x16D
     },
     // Error message window
     {
@@ -369,7 +374,7 @@ static const struct WindowTemplate sWindowTemplates_MainMenu[] =
         .width = MENU_WIDTH_ERROR,
         .height = MENU_HEIGHT_ERROR,
         .paletteNum = 15,
-        .baseBlock = 0x16D
+        .baseBlock = 0x1A1
     },
     DUMMY_WIN_TEMPLATE
 };
@@ -748,7 +753,7 @@ static void Task_DisplayMainMenu(u8 taskId)
         SetGpuReg(REG_OFFSET_WIN0V, 0);
         SetGpuReg(REG_OFFSET_WININ, WININ_WIN0_BG0 | WININ_WIN0_OBJ);
         SetGpuReg(REG_OFFSET_WINOUT, WINOUT_WIN01_BG0 | WINOUT_WIN01_OBJ | WINOUT_WIN01_CLR);
-        SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_EFFECT_DARKEN | BLDCNT_TGT1_BG0);
+        SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_EFFECT_DARKEN | BLDCNT_TGT1_BG0 | BLDCNT_TGT1_OBJ);
         SetGpuReg(REG_OFFSET_BLDALPHA, 0);
         SetGpuReg(REG_OFFSET_BLDY, 7);
 
@@ -796,7 +801,9 @@ static void Task_DisplayMainMenu(u8 taskId)
                 FillWindowPixelBuffer(2, PIXEL_FILL(0xA));
                 FillWindowPixelBuffer(3, PIXEL_FILL(0xA));
                 FillWindowPixelBuffer(4, PIXEL_FILL(0xA));
-                AddTextPrinterParameterized3(2, 1, 0, 1, sTextColor_Headers, -1, gText_MainMenuContinue);
+                StringCopy(gStringVar1, gSaveBlock2Ptr->playerName);
+                StringExpandPlaceholders(gStringVar4, gText_MainMenuContinuePlayer);
+                AddTextPrinterParameterized3(2, 1, 0, 1, sTextColor_Headers, -1, gStringVar4);
                 AddTextPrinterParameterized3(3, 1, 0, 1, sTextColor_Headers, -1, gText_MainMenuNewGame);
                 AddTextPrinterParameterized3(4, 1, 0, 1, sTextColor_Headers, -1, gText_MainMenuOption);
                 MainMenu_FormatSavegameText();
@@ -910,6 +917,8 @@ static bool8 HandleMainMenuInput(u8 taskId)
         }
         tCurrItem--;
         sCurrItemAndOptionMenuCheck = tCurrItem;
+        
+        UpdateIconsCallback(tMenuType, tCurrItem);
         return TRUE;
     }
     else if ((JOY_NEW(DPAD_DOWN)) && tCurrItem < tItemCount - 1)
@@ -922,6 +931,8 @@ static bool8 HandleMainMenuInput(u8 taskId)
         }
         tCurrItem++;
         sCurrItemAndOptionMenuCheck = tCurrItem;
+
+        UpdateIconsCallback(tMenuType, tCurrItem);
         return TRUE;
     }
     return FALSE;
@@ -2130,10 +2141,11 @@ static void CreateMainMenuErrorWindow(const u8* str)
 
 static void MainMenu_FormatSavegameText(void)
 {
-    MainMenu_FormatSavegamePlayer();
+    //MainMenu_FormatSavegamePlayer();
     MainMenu_FormatSavegamePokedex();
     MainMenu_FormatSavegameTime();
     MainMenu_FormatSavegameBadges();
+    MainMenu_FormatSavegameParty();
 }
 
 static void MainMenu_FormatSavegamePlayer(void)
@@ -2149,11 +2161,11 @@ static void MainMenu_FormatSavegameTime(void)
     u8* ptr;
 
     StringExpandPlaceholders(gStringVar4, gText_ContinueMenuTime);
-    AddTextPrinterParameterized3(2, 1, 0x6C, 17, sTextColor_MenuInfo, -1, gStringVar4);
+    AddTextPrinterParameterized3(2, 1, 0x90, 1, sTextColor_MenuInfo, -1, gStringVar4);
     ptr = ConvertIntToDecimalStringN(str, gSaveBlock2Ptr->playTimeHours, STR_CONV_MODE_LEFT_ALIGN, 3);
     *ptr = 0xF0;
     ConvertIntToDecimalStringN(ptr + 1, gSaveBlock2Ptr->playTimeMinutes, STR_CONV_MODE_LEADING_ZEROS, 2);
-    AddTextPrinterParameterized3(2, 1, GetStringRightAlignXOffset(1, str, 0xD0), 17, sTextColor_MenuInfo, -1, str);
+    AddTextPrinterParameterized3(2, 1, GetStringRightAlignXOffset(1, str, 0xD0), 1, sTextColor_MenuInfo, -1, str);
 }
 
 static void MainMenu_FormatSavegamePokedex(void)
@@ -2168,9 +2180,9 @@ static void MainMenu_FormatSavegamePokedex(void)
         else
             dexCount = GetHoennPokedexCount(FLAG_GET_CAUGHT);
         StringExpandPlaceholders(gStringVar4, gText_ContinueMenuPokedex);
-        AddTextPrinterParameterized3(2, 1, 0, 33, sTextColor_MenuInfo, -1, gStringVar4);
+        AddTextPrinterParameterized3(2, 1, 0, 17, sTextColor_MenuInfo, -1, gStringVar4);
         ConvertIntToDecimalStringN(str, dexCount, STR_CONV_MODE_LEFT_ALIGN, 3);
-        AddTextPrinterParameterized3(2, 1, GetStringRightAlignXOffset(1, str, 100), 33, sTextColor_MenuInfo, -1, str);
+        AddTextPrinterParameterized3(2, 1, 0x3C, 17, sTextColor_MenuInfo, -1, str);
     }
 }
 
@@ -2186,9 +2198,48 @@ static void MainMenu_FormatSavegameBadges(void)
             badgeCount++;
     }
     StringExpandPlaceholders(gStringVar4, gText_ContinueMenuBadges);
-    AddTextPrinterParameterized3(2, 1, 0x6C, 33, sTextColor_MenuInfo, -1, gStringVar4);
+    AddTextPrinterParameterized3(2, 1, 0x90, 17, sTextColor_MenuInfo, -1, gStringVar4);
     ConvertIntToDecimalStringN(str, badgeCount, STR_CONV_MODE_LEADING_ZEROS, 1);
-    AddTextPrinterParameterized3(2, 1, GetStringRightAlignXOffset(1, str, 0xD0), 33, sTextColor_MenuInfo, -1, str);
+    AddTextPrinterParameterized3(2, 1, GetStringRightAlignXOffset(1, str, 0xD0), 17, sTextColor_MenuInfo, -1, str);
+}
+
+static void MainMenu_FormatSavegameParty(void)
+{
+    u16 species2;
+    u8 slot;
+    
+    LoadMonIconPalettes();
+
+    for (slot = 0; slot < PARTY_SIZE && species2 != SPECIES_NONE; slot++)
+    {
+        species2 = GetMonData(&gPlayerParty[slot], MON_DATA_SPECIES2);
+        if (species2 != SPECIES_NONE)
+        {
+            partyId[slot] = CreateMonIcon(species2, SpriteCB_MonIcon, 40 + (slot * 32), 64, 0, GetMonData(&gPlayerParty[slot], MON_DATA_PERSONALITY));
+            gSprites[partyId[slot]].oam.priority = 0;
+        }
+    }
+}
+
+static void UpdateIconsCallback(u8 tMenuType, u8 tCurrItem)
+{
+    if (tMenuType == HAS_MYSTERY_EVENTS || tMenuType == HAS_MYSTERY_GIFT || tMenuType == HAS_SAVED_GAME)
+    {
+        u16 species2;
+        u8 slot;
+        
+        for (slot = 0; slot < PARTY_SIZE && species2 != SPECIES_NONE; slot++)
+        {
+            species2 = GetMonData(&gPlayerParty[slot], MON_DATA_SPECIES2);
+            if (species2 != SPECIES_NONE)
+            {
+                if (tCurrItem == 0)
+                    gSprites[partyId[slot]].callback = SpriteCB_MonIcon;
+                else
+                    gSprites[partyId[slot]].callback = SpriteCallbackDummy;
+            }
+        }
+    }
 }
 
 static void LoadMainMenuWindowFrameTiles(u8 bgId, u16 tileOffset)

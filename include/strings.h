@@ -331,6 +331,7 @@ extern const u8 gText_BatteryRunDry[];
 extern const u8 gText_MainMenuNewGame[];
 extern const u8 gText_MainMenuOption[];
 extern const u8 gText_MainMenuContinue[];
+extern const u8 gText_MainMenuContinuePlayer[];
 extern const u8 gText_MainMenuMysteryGift2[];
 extern const u8 gText_MainMenuMysteryEvents[];
 extern const u8 gText_MainMenuMysteryGift[];
